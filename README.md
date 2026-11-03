@@ -9,8 +9,8 @@ A reference implementation demonstrating shift-left container vulnerability mana
 
 ## Architecture & Security Posture
 
-+------------------------------------+
-...
+```text
+                                  +------------------------------------+
                                   |        Developer Workstation       |
                                   |   (Local Pre-commit TruffleHog)    |
                                   +-----------------+------------------+
@@ -37,7 +37,7 @@ A reference implementation demonstrating shift-left container vulnerability mana
                                                      |    GitHub Container Registry (GHCR)     |
                                                      |    ghcr.io/.../devsecops-lab:latest     |
                                                      +-----------------------------------------+
-
+```
 
 ### Core Security Controls
 * **Hardened Multi-Stage Container (`Dockerfile`)**: Builds runtime artifacts using `npm ci --omit=dev` and executes as an unprivileged user (`appuser:appgroup`) to prevent container breakout vulnerabilities. Includes native `/healthz` polling.
