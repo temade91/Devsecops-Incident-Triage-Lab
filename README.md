@@ -41,13 +41,13 @@ A reference implementation demonstrating shift-left container vulnerability mana
 
 
 ### Core Security Controls
-* **Hardened Multi-Stage Container (Dockerfile): Builds runtime artifacts using npm ci --omit=dev and executes as an unprivileged user (appuser:appgroup) to prevent container breakout vulnerabilities. Includes native /healthz polling.
+* Hardened Multi-Stage Container (Dockerfile): Builds runtime artifacts using npm ci --omit=dev and executes as an unprivileged user (appuser:appgroup) to prevent container breakout vulnerabilities. Includes native /healthz polling.
 
-* **Dual-Layer Vulnerability Scanning (Aqua Security Trivy): Scans base Alpine OS packages and application dependencies directly in the pipeline, reporting HIGH and CRITICAL vulnerabilities to the runner console in structured table format.
+* Dual-Layer Vulnerability Scanning (Aqua Security Trivy): Scans base Alpine OS packages and application dependencies directly in the pipeline, reporting HIGH and CRITICAL vulnerabilities to the runner console in structured table format.
 
-* **Automated Secret Detection (TruffleHog OSS): Evaluates full Git commit graphs (fetch-depth: 0) across PRs and branches to block unverified/verified secrets before release.
+* Automated Secret Detection (TruffleHog OSS): Evaluates full Git commit graphs (fetch-depth: 0) across PRs and branches to block unverified/verified secrets before release.
 
-* **Least-Privilege Token Permissions: Workflows explicitly restrict ${{ secrets.GITHUB_TOKEN }} to the minimum scopes required: contents: read for checkout, packages: write for GHCR publishing, and security-events: write for workflow telemetry
+* Least-Privilege Token Permissions: Workflows explicitly restrict ${{ secrets.GITHUB_TOKEN }} to the minimum scopes required: contents: read for checkout, packages: write for GHCR publishing, and security-events: write for workflow telemetry
 
 ---
 
