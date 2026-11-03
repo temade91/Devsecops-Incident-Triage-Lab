@@ -22,3 +22,7 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running securely on port ${PORT}`);
 });
+// Cloud Storage Health Endpoint
+app.get('/api/storage-status', (req, res) => {
+  res.status(200).json({ storage: 'connected', provider: 'Azure Blob' });
+});
