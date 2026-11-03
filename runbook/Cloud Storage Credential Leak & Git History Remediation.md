@@ -58,9 +58,10 @@ Integrated TruffleHog OSS into the CI/CD workflow to scan repository commit hist
 
 These controls support early detection and help reduce accidental secret exposure.
 
+screenshot of local TruffleHog scan
 <img width="1672" height="941" alt="image" src="https://github.com/user-attachments/assets/3116032d-8ec9-46d3-a0cf-60d323416f91" />
 
-
+screenshot of successful GitHub Actions secret scan
 <img width="1845" height="949" alt="image" src="https://github.com/user-attachments/assets/8824dc13-45b9-4306-9137-04128390607c" />
 
 
