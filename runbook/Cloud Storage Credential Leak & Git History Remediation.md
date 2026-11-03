@@ -1,61 +1,89 @@
-Cloud Storage Credential Leak & Git History Remediation
-1. Incident Metadata
-Classification: Secret Exposure / Compromised Cloud Credentials
+# Runbook 02: Azure Storage Credential Exposure & Git History Remediation
 
-Severity: Critical (High risk of unauthorized cloud resource access and lateral movement)
+**Project:** DevSecOps Incident Triage Lab  
+**Service:** Azure Storage  
+**Severity:** Medium  
+**Status:** Resolved – Security Simulation
 
-Leaked Secret Artifact: azure-storage.env (Azure Storage Account connection string)
+## 1. Incident Overview
 
-Status: Committed to historical Git commits; conventional deletion (git rm) does not remove keys from the .git packfile tree.
+As part of my DevSecOps project, I simulated an Azure Storage credential exposure by committing a randomly generated practice credential in an environment file.
 
-2. Forensic Discovery & Blast Radius Assessment
-Confirm the presence and historical depth of the leaked key across all refs:
+The exercise demonstrates secret detection, Git history cleanup, and preventive security controls.
 
-Bash
-git grep "prodstordevsecops" $(git rev-list --all)
-Output confirms the secret is permanently captured in historical commit objects and exposed to anyone with clone access.
+**Note:** This was a controlled simulation. No real production credentials were exposed.
 
-3. Emergency Remediation Protocol
-Step 3.1: Cloud Provider Invalidation & Key Rotation (First Priority)
-Never attempt Git history remediation before rotating the credential. Treat the secret as actively compromised and revoke it immediately:
+## 2. Root Cause
 
-Bash
+A sensitive environment file (`azure-storage.env`) was committed without being excluded from Git tracking.
+
+This demonstrated the risk of storing credentials in source control.
+
+## 3. Remediation
+
+For a real credential exposure, the affected Azure Storage key should be rotated:
+
+```bash
 az storage account keys renew \
-  --resource-group rg-production \
-  --account-name prodstordevsecops \
+  --resource-group <resource-group> \
+  --account-name <storage-account> \
   --key primary
-Step 3.2: History Scrubbing via git-filter-repo
-Use git-filter-repo to expunge the file and its references across all branches, tags, and commits:
+```
 
-Bash
-# 1. Install tool
-sudo apt-get update && sudo apt-get install -y git-filter-repo
+Remove the sensitive file from Git history:
 
-# 2. Scrub target file from all Git objects
-git-filter-repo --path azure-storage.env --invert-paths --force
-Step 3.3: Verification of Eradication
-Confirm the secret no longer exists in any commit object:
+```bash
+git-filter-repo \
+  --path azure-storage.env \
+  --invert-paths
+```
 
-Bash
-git grep "prodstordevsecops" $(git rev-list --all)
-Expected result: Zero output. This confirms the secret has been expunged from the entire Git object database.
+Add sensitive files to `.gitignore`:
 
-Step 3.4: Synchronize Sanitized History Upstream
-Re-attach the remote origin and push the rewritten commit graph using --force-with-lease:
+```gitignore
+.env
+*.env
+azure-storage.env
+```
 
-Bash
-git remote add origin https://github.com/temade91/Devsecops-Incident-Triage-Lab.git
-git fetch origin main
-git push --force-with-lease origin main
-4. Preventative Guardrails (Shift-Left Controls)
-Workstation Pre-Commit Hook
-Prevent unverified secrets from leaving the developer workstation:
+## 4. Secret Scanning & Security Controls
 
-Bash
-cat << 'HOOK' > .git/hooks/pre-commit
-#!/bin/sh
-trufflehog git file://. --since-commit HEAD --fail
-HOOK
-chmod +x .git/hooks/pre-commit
-Automated CI Secret Scanning
-The .github/workflows/secret-scan.yml pipeline runs on every pull request and push to main with fetch-depth: 0 and --only-verified, blocking merges containing active keys.
+**Local Scanning – TruffleHog OSS**
+
+Used locally to detect potential secrets and sensitive information before committing changes to the repository.
+
+**Automated Scanning – GitHub Actions**
+
+Integrated TruffleHog OSS into the CI/CD workflow to scan repository commit history using `fetch-depth: 0` and identify potential exposed credentials.
+
+These controls support early detection and help reduce accidental secret exposure.
+
+![Local TruffleHog Scan](screenshots/trufflehog-local-scan.png)
+
+<img width="1845" height="949" alt="image" src="https://github.com/user-attachments/assets/8824dc13-45b9-4306-9137-04128390607c" />
+
+
+## 5. Validation
+
+- Reviewed Git history after cleanup.
+- Confirmed sensitive environment files are excluded from future commits.
+- Reviewed local TruffleHog scanning results.
+- Verified the automated secret-scanning workflow.
+
+<img width="1887" height="883" alt="image" src="https://github.com/user-attachments/assets/92c63160-0b17-46e9-9206-f2e4420579c9" />
+
+
+## 6. Tools & Technologies
+
+- Microsoft Azure Storage
+- Azure CLI
+- Git and GitHub
+- Git Filter-Repo
+- TruffleHog OSS
+- GitHub Actions
+
+## 7. Project Repository
+
+**GitHub:** https://github.com/temade91/Devsecops-Incident-Triage-Lab
+
+**Project Note:** Independently developed security simulation demonstrating secret detection, credential exposure remediation, Git history cleanup, and automated security controls.
