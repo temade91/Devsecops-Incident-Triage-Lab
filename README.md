@@ -8,7 +8,9 @@ A reference implementation demonstrating shift-left container vulnerability mana
 ---
 
 ## Architecture & Security Posture
+
 +------------------------------------+
+...
                                   |        Developer Workstation       |
                                   |   (Local Pre-commit TruffleHog)    |
                                   +-----------------+------------------+
