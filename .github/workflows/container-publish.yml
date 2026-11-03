@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 # Production Least-Privilege Scoping:
-# DELIBERATE MISCONFIGURATION: packages: read instead of packages: write
+# DELIBERATE MISCONFIGURATION: packages: write instead of packages: write
 permissions:
   contents: read
-  packages: read
+  packages: write
   security-events: write
 
 jobs:
