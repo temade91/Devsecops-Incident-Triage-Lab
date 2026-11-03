@@ -1,4 +1,4 @@
-# Runbook 02: Azure Storage Credential Exposure & Git History Remediation
+# Azure Storage Credential Exposure & Git History Remediation
 
 **Project:** DevSecOps Incident Triage Lab  
 **Service:** Azure Storage  
