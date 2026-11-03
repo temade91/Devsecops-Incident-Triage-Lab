@@ -1,0 +1,13 @@
+{
+  "name": "devsecops-incident-triage-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production containerized microservice for vulnerability gating and incident triage",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
