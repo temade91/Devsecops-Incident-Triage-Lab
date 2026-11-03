@@ -1,47 +1,107 @@
-Runbook 1: GHCR 403 Forbidden Authorization Triage
-1. Incident Metadata
-Classification: CI/CD Deployment Pipeline / Package Registry Authorization Failure
+# GHCR 403 Forbidden – Authorization Triage
 
-Severity: High (Blocks automated image publishing to GHCR)
+## 1. Incident Overview
 
-Affected Pipeline: .github/workflows/container-publish.yml
+- **Project:** DevSecOps Incident Triage Lab
+- **Service:** GitHub Container Registry (GHCR)
+- **CI/CD:** GitHub Actions
+- **Severity:** Medium
+- **Status:** Resolved
 
-Trigger / Error Signature:
+### Summary
 
-Plaintext
-ERROR: failed to solve: failed to push ghcr.io/temade91/devsecops-incident-triage-lab:latest: 
-denied: installation not allowed to Create organization package (or HTTP 403 Forbidden)
-2. Root Cause Analysis (RCA)
-GitHub Actions automatically provisions an ephemeral ${{ secrets.GITHUB_TOKEN }} per workflow execution. By default, workflow tokens strictly adhere to least-privilege scoping. The release workflow succeeded locally during the Docker build and Aqua Trivy vulnerability scan phases, but failed during the registry push phase.
+During my DevSecOps project, I encountered a `403 Forbidden` error while publishing a Docker image to GitHub Container Registry.
 
-The workflow token permissions block in .github/workflows/container-publish.yml was misconfigured with:
+The Docker image built successfully, but the push operation failed due to insufficient package permissions and package creation restrictions.
 
-YAML
+## 2. Error Identification
+
+**Error message:**
+
+```text
+denied: installation not allowed to Create organization package
+```
+
+**Impact:**
+- Docker image publishing failed.
+- GitHub Actions workflow ended unsuccessfully.
+- The container image was not published.
+
+### Screenshot 1: Initial Pipeline Failure
+<img width="1909" height="584" alt="image" src="https://github.com/user-attachments/assets/8160bb1a-67ee-4e12-addf-f74b6ee1e5a4" />
+
+
+_Insert screenshot of the failed GHCR image push here._
+
+## 3. Root Cause Analysis
+
+The workflow had the following permissions:
+
+```yaml
 permissions:
   contents: read
-  packages: read      # <--- ROOT CAUSE: Lacks permission to create/push new package artifacts
+  packages: read
   security-events: write
-Because the token was restricted to read-only package access, Docker Buildx received an HTTP 403 Forbidden response when attempting to authenticate and push image layers to ghcr.io.
+```
 
-3. Triage & Remediation Procedure
-Step 3.1: Elevate Workflow Scope in YAML
-Update .github/workflows/container-publish.yml to elevate the packages scope to write:
+The `packages: read` permission did not allow the workflow to publish Docker images.
 
-YAML
+The package access configuration also needed to allow the workflow to create and publish the package.
+
+### Screenshot 2: Original Workflow Configuration
+
+_Insert screenshot showing the original workflow permissions here._
+
+## 4. Remediation
+
+I updated the workflow permissions:
+
+```yaml
 permissions:
   contents: read
-  packages: write     # <--- Elevated to permit publishing to GitHub Container Registry
+  packages: write
   security-events: write
-Step 3.2: Verify Repository Workflow Permissions
-Go to your repository on GitHub.
+```
 
-Navigate to Settings > Actions > General.
+I also reviewed the GitHub package access settings to ensure the workflow could publish the container image.
 
-Under Workflow permissions, ensure Read and write permissions is selected and saved.
+`security-events: write` is only needed if the workflow uploads security findings to GitHub Code Scanning.
 
-Step 3.3: Pipeline Verification
-Re-run the container release workflow or push a new commit to main.
+## 5. Validation and Result
 
-Confirm that all stages (Harden Runner, Build, Trivy Scan, and Build & Push) complete with green checkmarks.
+After applying the changes, I reran the GitHub Actions workflow.
 
-Verify that the image package is listed under your profile or repository at [https://github.com/temade91?tab=packages](https://github.com/temade91?tab=packages).
+**Validation performed:**
+- Confirmed `packages: write` permission.
+- Reviewed GHCR authentication.
+- Successfully rebuilt and pushed the Docker image.
+- Verified the published image in GHCR.
+
+<badge color="success">Resolved</badge>
+
+### Screenshot 3: Successful Pipeline Execution
+
+_Insert screenshot of the successful GitHub Actions run or published GHCR package here._
+
+## 6. Lessons Learned
+
+- Authentication and authorization are different.
+- Docker image publishing requires appropriate package write permissions.
+- GitHub Actions tokens should follow the principle of least privilege.
+- Repository and organization package access settings can affect publishing.
+- Pipeline logs are essential for troubleshooting CI/CD failures.
+
+## 7. Tools and Technologies
+
+- GitHub Actions
+- GitHub Container Registry
+- Docker
+- Git and GitHub
+- YAML
+- GitHub Token Permissions
+
+## 8. Project Repository
+
+[DevSecOps Incident Triage Lab](https://github.com/temade91/Devsecops-Incident-Triage-Lab)
+
+**Author:** Independently developed and implemented by me.
