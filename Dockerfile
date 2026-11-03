@@ -3,7 +3,7 @@ FROM node:20-alpine3.19 AS dependencies
 WORKDIR /app
 COPY package*.json ./
 # Production standard: strict lockfile installation
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Stage 2: Hardened Runtime Container
 FROM node:20-alpine3.19 AS runtime
