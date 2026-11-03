@@ -28,10 +28,8 @@ denied: installation not allowed to Create organization package
 - The container image was not published.
 
 ### Screenshot 1: Initial Pipeline Failure
-<img width="1909" height="584" alt="image" src="https://github.com/user-attachments/assets/8160bb1a-67ee-4e12-addf-f74b6ee1e5a4" />
+<img width="1898" height="774" alt="image" src="https://github.com/user-attachments/assets/4d691792-4bac-4214-a61f-d438a7e3c9bf" />
 
-
-_Insert screenshot of the failed GHCR image push here._
 
 ## 3. Root Cause Analysis
 
@@ -50,7 +48,8 @@ The package access configuration also needed to allow the workflow to create and
 
 ### Screenshot 2: Original Workflow Configuration
 
-_Insert screenshot showing the original workflow permissions here._
+<img width="1890" height="602" alt="image" src="https://github.com/user-attachments/assets/602b50a6-19d5-492b-b963-4c7b9939216a" />
+
 
 ## 4. Remediation
 
@@ -81,7 +80,7 @@ After applying the changes, I reran the GitHub Actions workflow.
 
 ### Screenshot 3: Successful Pipeline Execution
 
-_Insert screenshot of the successful GitHub Actions run or published GHCR package here._
+<img width="1896" height="952" alt="image" src="https://github.com/user-attachments/assets/6cf841ea-c28a-452c-8516-4cd9a3c816b1" />
 
 ## 6. Lessons Learned
 
