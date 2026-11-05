@@ -65,3 +65,9 @@ docker run -d --name devsecops-lab -p 3000:3000 devsecops-lab:local
 curl http://localhost:3000/healthz
 
 trivy image --severity HIGH,CRITICAL devsecops-lab:local
+
+## Documentation
+
+### Incident Triage & Remediation
+- [GHCR 403 Forbidden Authorization Triage](runbook/GHCR%20403%20Forbidden%20Authorization%20Triage.md)
+- [Cloud Storage Credential Leak & Git History Remediation](runbook/Cloud%20Storage%20Credential%20Leak%20%26%20Git%20History%20Remediation.md)
