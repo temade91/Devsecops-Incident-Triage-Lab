@@ -4,21 +4,21 @@
 
 [![TruffleHog Secret Scan](https://github.com/temade91/Devsecops-Incident-Triage-Lab/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/temade91/Devsecops-Incident-Triage-Lab/actions/workflows/secret-scan.yml)
 
-A hands-on DevSecOps lab demonstrating container security scanning, automated secret detection, GitHub Actions permissions, GHCR publishing, and Git history remediation through controlled security simulations.
+A hands-on DevSecOps lab demonstrating container security scanning, automated secret detection, CI/CD authorization troubleshooting, GHCR image publishing, and Git history remediation through controlled security simulations.
 
 ---
 
-## Architecture & Security Controls
+## 1. Architecture & Security Controls
 
 ```text
-                  +--------------------------------------+
-                  |        Developer Workstation         |
-                  |     Local TruffleHog Secret Scan     |
-                  +------------------+-------------------+
-                                     |
-                                  git push
-                                     |
-                                     v
+                    +--------------------------------------+
+                    |        Developer Workstation         |
+                    |       Local TruffleHog Scan          |
+                    +------------------+-------------------+
+                                       |
+                                    git push
+                                       |
+                                       v
 +--------------------------------------------------------------------+
 |                  GitHub Actions CI/CD Environment                  |
 |                    Harden-Runner Egress Audit                      |
@@ -27,8 +27,9 @@ A hands-on DevSecOps lab demonstrating container security scanning, automated se
 |  | Secret Scanning Workflow    |  | Container Build & Release     | |
 |  |                             |  |                               | |
 |  | - TruffleHog OSS            |  | - Multi-stage Docker build    | |
-|  | - Full Git history          |  | - Non-root execution         | |
-|  | - Verified secret checks    |  | - Trivy OS and library scan  | |
+|  | - Full Git history          |  | - Node.js 20 Alpine 3.19      | |
+|  | - Verified secret checks    |  | - Non-root execution         | |
+|  |                             |  | - Trivy OS and library scan  | |
 |  +-----------------------------+  +---------------+---------------+ |
 |                                                   |                |
 |                                                   v                |
@@ -36,9 +37,9 @@ A hands-on DevSecOps lab demonstrating container security scanning, automated se
 |                                  | GHCR Authentication & Publish | |
 |                                  | GitHub Token: packages: write | |
 |                                  +---------------+---------------+ |
-+--------------------------------------------------------------------+
-                                                    |
-                                                    v
++--------------------------------------------------|-----------------+
+                                                   |
+                                                   v
                                   +-------------------------------+
                                   | GitHub Container Registry     |
                                   | GHCR                          |
@@ -47,61 +48,94 @@ A hands-on DevSecOps lab demonstrating container security scanning, automated se
 
 ### Core Security Controls
 
-**1. Container Security**
+**Container Security – Docker**
 
-The Dockerfile uses a multi-stage build and runs the application as a non-root user. Production dependencies are installed using `npm ci --omit=dev`, and the application exposes a `/healthz` endpoint for health checks.
+The Dockerfile uses a multi-stage build based on Node.js 20 Alpine 3.19. Production dependencies are installed using `npm ci --omit=dev`, followed by npm cache cleanup.
 
-**2. Vulnerability Scanning – Trivy**
+The runtime container uses a dedicated non-root account (`appuser:appgroup`). Application files are assigned to this account, and a Docker health check monitors the `/healthz` endpoint.
 
-Aqua Security Trivy scans the container image for operating system and application library vulnerabilities. The workflow reports HIGH and CRITICAL findings in table format.
+**Vulnerability Scanning – Trivy**
 
-The current workflow is configured with `exit-code: '0'`, so findings are reported without automatically failing the pipeline.
+Aqua Security Trivy scans the container image for operating system and application library vulnerabilities.
 
-**3. Automated Secret Detection – TruffleHog OSS**
+The GitHub Actions workflow reports HIGH and CRITICAL findings in table format. Its current configuration uses `exit-code: '0'`, meaning findings are reported without automatically failing the workflow or blocking image publishing.
 
-TruffleHog is integrated into GitHub Actions to scan the repository using `fetch-depth: 0`, which makes the full Git history available to the workflow.
+**Automated Secret Detection – TruffleHog OSS**
 
-The scan uses `--only-verified` to focus on secrets that TruffleHog can verify.
+TruffleHog is integrated into GitHub Actions to scan the repository using `fetch-depth: 0`, making the full Git history available to the scanner.
 
-**4. GitHub Actions Permissions**
+The workflow uses `--only-verified` to focus on secrets that TruffleHog can verify.
 
-The container publishing workflow uses explicit permissions, including:
+**Runner Security Monitoring – Harden-Runner**
+
+StepSecurity Harden-Runner runs in audit mode to monitor outbound network activity during GitHub Actions workflow execution.
+
+**GitHub Actions Permissions**
+
+The container publishing workflow uses explicit permissions:
 
 - `contents: read` for repository checkout.
-- `packages: write` for publishing images to GHCR.
+- `packages: write` for publishing container images to GHCR.
 - `security-events: write` as an explicitly granted workflow permission.
-
-**5. Runner Security Monitoring**
-
-StepSecurity Harden-Runner runs in audit mode to monitor outbound network activity during workflow execution.
 
 ---
 
-## Incident Triage & Remediation
+## 2. Incident Triage & Remediation
 
-This project includes two controlled security exercises.
+This project includes two controlled security exercises demonstrating incident investigation, remediation, and validation.
 
-### 1. GHCR 403 Forbidden – Authorization Triage
+### Incident 1: GHCR 403 Forbidden – Authorization Triage
 
-Simulated and investigated a container publishing failure caused by insufficient GitHub package permissions.
+**Service:** GitHub Container Registry (GHCR)
 
-The original workflow used `packages: read`, which did not allow image publishing. The permission was changed to `packages: write`, and package access settings were reviewed.
+**Problem:** A Docker image built successfully, but publishing failed with a `403 Forbidden` authorization error.
 
-[Read the GHCR Authorization Triage Runbook](runbook/GHCR%20403%20Forbidden%20Authorization%20Triage.md)
+The error message was:
 
-### 2. Azure Storage Credential Exposure & Git History Remediation
+```text
+denied: installation not allowed to Create organization package
+```
 
-Simulated an Azure Storage credential exposure using a randomly generated practice credential.
+**Root Cause:**
 
-The exercise covered secret detection, Git history cleanup with Git Filter-Repo, `.gitignore` configuration, and local and automated TruffleHog scanning.
+The original GitHub Actions workflow used `packages: read`, which did not provide the required permission to publish container images.
+
+**Remediation:**
+
+- Updated the workflow permission from `packages: read` to `packages: write`.
+- Reviewed GitHub package access settings.
+- Reran the GitHub Actions workflow.
+- Confirmed successful image publishing to GHCR.
+
+[Read the GHCR 403 Authorization Triage Runbook](runbook/GHCR%20403%20Forbidden%20Authorization%20Triage.md)
+
+### Incident 2: Azure Storage Credential Exposure & Git History Remediation
+
+**Service:** Microsoft Azure Storage
+
+**Severity:** Medium
+
+**Status:** Resolved – Security Simulation
+
+**Problem:**
+
+A randomly generated practice credential was committed in an environment file (`azure-storage.env`) to simulate accidental credential exposure.
+
+**Remediation Exercise:**
+
+- Reviewed the simulated credential exposure.
+- Used Git Filter-Repo to remove the sensitive file from Git history.
+- Added sensitive environment files to `.gitignore`.
+- Reviewed local TruffleHog scanning results.
+- Integrated TruffleHog into GitHub Actions for automated repository scanning.
 
 No real production credentials were exposed.
 
-[Read the Azure Storage Credential Remediation Runbook](runbook/Cloud%20Storage%20Credential%20Leak%20%26%20Git%20History%20Remediation.md)
+[Read the Azure Storage Credential Exposure & Git History Remediation Runbook](runbook/Cloud%20Storage%20Credential%20Leak%20%26%20Git%20History%20Remediation.md)
 
 ---
 
-## Local Development & Testing
+## 3. Local Development & Testing
 
 ### Build the Docker Image
 
@@ -121,19 +155,41 @@ docker run -d --name devsecops-lab -p 3000:3000 devsecops-lab:local
 curl http://localhost:3000/healthz
 ```
 
-### Scan the Container Image
+### Scan the Container Image with Trivy
 
 ```bash
 trivy image --severity HIGH,CRITICAL devsecops-lab:local
 ```
 
+### Run a Local TruffleHog Scan
+
+```bash
+trufflehog filesystem . --only-verified
+```
+
 ---
 
-## Tools & Technologies
+## 4. GitHub Actions Workflows
+
+This repository contains two automated workflows.
+
+| Workflow | Purpose | Trigger |
+|---|---|---|
+| `secret-scan.yml` | Scans repository history for verified secrets using TruffleHog | Push, pull request to main, manual |
+| `container-publish.yml` | Builds the Docker image, scans it with Trivy, and publishes it to GHCR | Push to main, manual |
+
+Both workflows use StepSecurity Harden-Runner in audit mode.
+
+The container workflow reports Trivy findings and proceeds with publishing according to its current configuration. The secret-scanning workflow runs independently.
+
+---
+
+## 5. Tools & Technologies
 
 - Microsoft Azure Storage
 - Azure CLI
 - Docker
+- Node.js 20
 - Git and GitHub
 - GitHub Actions
 - GitHub Container Registry (GHCR)
@@ -145,8 +201,24 @@ trivy image --severity HIGH,CRITICAL devsecops-lab:local
 
 ---
 
-## Project Repository
+## 6. Key Learning Outcomes
 
-[DevSecOps Incident Triage Lab – GitHub](https://github.com/temade91/Devsecops-Incident-Triage-Lab)
+Through these exercises, I demonstrated practical experience with:
 
-**Project Note:** Independently developed and implemented as a hands-on security simulation covering container scanning, secret detection, CI/CD permissions, and incident remediation.
+- Investigating CI/CD authorization failures.
+- Configuring GitHub Actions token permissions.
+- Building multi-stage Docker images.
+- Running containers as non-root users.
+- Scanning container images for vulnerabilities.
+- Detecting verified secrets in Git repositories.
+- Removing sensitive files from Git history.
+- Applying preventive controls to reduce accidental credential exposure.
+- Monitoring GitHub Actions runner network activity.
+
+---
+
+## 7. Project Repository
+
+**GitHub:** [DevSecOps Incident Triage Lab](https://github.com/temade91/Devsecops-Incident-Triage-Lab)
+
+**Project Note:** Independently developed and implemented as a hands-on DevSecOps security simulation covering container security, secret detection, CI/CD authorization troubleshooting, and incident remediation.
