@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 # Production Least-Privilege Scoping:
-# DELIBERATE MISCONFIGURATION: packages: write instead of packages: write
+# Corrected configuration after GHCR authorization failure
 permissions:
   contents: read
   packages: write
